@@ -1,6 +1,6 @@
 ---
 title: "BikeMe2"
-author: "Jimmy"
+author: "asdf"
 date: '2022-09-25'
 output: html_document
 ---
@@ -23,7 +23,7 @@ library("readxl")
 ```
 데이터 Import
 ```{r}
-  setwd("/Users/jimmybae/Downloads/Bike_Share_Membership/trip_data")
+  setwd("/Users/Downloads/Bike_Share_Membership/trip_data")
   cycle_data_21_07 <- read.csv("202107.csv")
   cycle_data_21_08 <- read.csv("202108.csv")
   cycle_data_21_09 <- read.csv("202109.csv")
@@ -39,7 +39,7 @@ library("readxl")
 ```
 작업 디렉토리 상위폴더로 변경
 ```{r}
-setwd("/Users/jimmybae/Downloads/Bike_Share_Membership")
+setwd("/Users/Downloads/Bike_Share_Membership")
 ratio_length_data <- read_excel("tftftft3.xlsx")
 ```
 데이터 Join을 하기위해 column 이름 확인
@@ -140,7 +140,7 @@ all_trips3_2 <- all_trips3[!(all_trips3$start_station_name == "DIVVY CASSETTE RE
 ```
 지금까지 정리한 데이터 csv파일로 백업
 ```{r}
-write.csv(all_trips3_2, file = '/Users/jimmybae/Downloads/Bike_Share_Membership/all_trips4.csv')
+write.csv(all_trips3_2, file = '/Users/Downloads/Bike_Share_Membership/all_trips4.csv')
 ```
 
 정리한 데이터 요약으로 더블 체크
@@ -185,7 +185,7 @@ all_trips3_2 %>%
 ```
 
 ##```{r}
-##write.csv(ratio_length_data2, file = ##'/Users/jimmybae/Downloads/Bike_Share_Membership/ratio_length_data2.csv')
+##write.csv(ratio_length_data2, file = ##'/Users/Downloads/Bike_Share_Membership/ratio_length_data2.csv')
 ##```
 계산
 시작지점과 끝나는 지점이 같은 trip 비율로 계산
