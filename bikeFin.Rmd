@@ -1,0 +1,299 @@
+---
+title: "BikeMe2"
+author: "Jimmy"
+date: '2022-09-25'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+패키지 설치
+```{r}
+  #install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+  #install.packages("lubridate", repos = "http://cran.us.r-project.org")
+  library(tidyverse)
+  library(lubridate)
+  library(skimr)
+```
+```{r}
+#install.packages("readxl")
+library("readxl")
+```
+데이터 Import
+```{r}
+  setwd("/Users/jimmybae/Downloads/Bike_Share_Membership/trip_data")
+  cycle_data_21_07 <- read.csv("202107.csv")
+  cycle_data_21_08 <- read.csv("202108.csv")
+  cycle_data_21_09 <- read.csv("202109.csv")
+  cycle_data_21_10 <- read.csv("202110.csv")
+  cycle_data_21_11 <- read.csv("202111.csv")
+  cycle_data_21_12 <- read.csv("202112.csv")
+  cycle_data_22_01 <- read.csv("202201.csv")
+  cycle_data_22_02 <- read.csv("202202.csv")
+  cycle_data_22_03 <- read.csv("202203.csv")
+  cycle_data_22_04 <- read.csv("202204.csv")
+  cycle_data_22_05 <- read.csv("202205.csv")
+  cycle_data_22_06 <- read.csv("202206.csv")
+```
+작업 디렉토리 상위폴더로 변경
+```{r}
+setwd("/Users/jimmybae/Downloads/Bike_Share_Membership")
+ratio_length_data <- read_excel("tftftft3.xlsx")
+```
+데이터 Join을 하기위해 column 이름 확인
+```{r}
+  colnames(cycle_data_21_07)
+  colnames(cycle_data_21_08)
+  colnames(cycle_data_21_09)
+  colnames(cycle_data_21_10)
+  colnames(cycle_data_21_11)
+  colnames(cycle_data_21_12)
+  colnames(cycle_data_22_01)
+  colnames(cycle_data_22_02)
+  colnames(cycle_data_22_03)
+  colnames(cycle_data_22_04)
+  colnames(cycle_data_22_05)
+  colnames(cycle_data_22_06)
+```
+
+데이터들을 all_trips3로 합침
+```{r}
+all_trips3 <- rbind(cycle_data_21_07, cycle_data_21_08, cycle_data_21_09, cycle_data_21_10, cycle_data_21_11, cycle_data_21_12, cycle_data_22_01, cycle_data_22_02, cycle_data_22_03, cycle_data_22_04, cycle_data_22_05, cycle_data_22_06)
+```
+ride_id가 같은 값 제거
+```{r}
+all_trips3$ride_id[duplicated(all_trips3$ride_id)]
+```
+시작지점과 끝지점 station name, id가 공백인 값 개수 확인
+```{r}
+sum(all_trips3$start_station_name == '')
+sum(all_trips3$start_station_id == '')
+sum(all_trips3$end_station_name == '')
+sum(all_trips3$end_station_id == '')
+```
+데이터가 어떻게 나오는지 간략히 확인
+```{r}
+colnames(all_trips3)
+```
+```{r}
+nrow(all_trips3)
+```
+```{r}
+dim(all_trips3)
+```
+```{r}
+head(all_trips3)
+```
+```{r}
+tail(all_trips3)
+```
+```{r}
+str(all_trips3)
+```
+```{r}
+summary(all_trips3)
+```
+##시작지점 이름 훑어보기
+##```{r}
+##table(all_trips3$start_station_name)
+##```
+
+```{r}
+table(all_trips3$rideable_type)
+```
+전기자전거면서 시작지점이 공백인 부분 개수 확인
+```{r}
+count(all_trips3, rideable_type =="electric_bike" & start_station_name == "")
+```
+docked_bike 개수 확인
+```{r}
+count(all_trips3, rideable_type == "docked_bike")
+```
+
+날짜 포맷을 일, 주, 월, 년도 로 새로운 column추가
+```{r}
+all_trips3$date <- as.Date(all_trips3$started_at)
+all_trips3$month <- format(as.Date(all_trips3$date), "%m")
+all_trips3$day <- format(as.Date(all_trips3$date), "%d")
+all_trips3$year <- format(as.Date(all_trips3$date), "%Y")
+all_trips3$day_of_week <- format(as.Date(all_trips3$date), "%A")
+```
+추가된 column 확인
+```{r}
+colnames(all_trips3)
+```
+ride_length 시간차이 계산하고 숫자로 변환
+```{r}
+all_trips3$ride_length <- difftime(all_trips3$ended_at,all_trips3$started_at)
+all_trips3$ride_length <- as.numeric(as.character(all_trips3$ride_length))
+```
+ride_length 요약으로 이상한 값 확인
+```{r}
+summary(all_trips3$ride_length)
+```
+불필요하거나 이상한 데이터 없앤 새로운 데이터프레임에 넣기
+(0초 미만, 수리센터, docked_bike 등)
+```{r}
+all_trips3_2 <- all_trips3[!(all_trips3$start_station_name == "DIVVY CASSETTE REPAIR MOBILE STATION" | all_trips3$start_station_name == "HUBBARD ST BIKE CHECKING (LBS-WH-TEST)" | all_trips3$rideable_type == "docked_bike" | all_trips3$ride_length < 0 | all_trips3$ride_length > 86400),]
+```
+지금까지 정리한 데이터 csv파일로 백업
+```{r}
+write.csv(all_trips3_2, file = '/Users/jimmybae/Downloads/Bike_Share_Membership/all_trips4.csv')
+```
+
+정리한 데이터 요약으로 더블 체크
+```{r}
+summary(all_trips3_2$ride_length)
+```
+
+회원 비회원 ride_length 비교
+```{r}
+aggregate(all_trips3_2$ride_length ~ all_trips3_2$member_casual, FUN = mean)
+aggregate(all_trips3_2$ride_length ~ all_trips3_2$member_casual, FUN = median)
+aggregate(all_trips3_2$ride_length ~ all_trips3_2$member_casual, FUN = max)
+aggregate(all_trips3_2$ride_length ~ all_trips3_2$member_casual, FUN = min)
+```
+
+회원별, 요일별, ride_length 비교
+```{r}
+aggregate(all_trips3_2$ride_length ~ all_trips3_2$member_casual + all_trips3_2$day_of_week, FUN = mean)
+```
+
+R에 나오는 표 요일별로 정렬
+```{r}
+all_trips3_2$day_of_week <- ordered(all_trips3_2$day_of_week, levels=c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+```
+
+요일별, 회원별, ride_length 와 trip횟수
+```{r}
+all_trips3_2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>%
+  group_by(member_casual, weekday) %>%
+  summarise(number_of_rides = n()	 
+  ,average_duration = mean(ride_length)) %>%
+  arrange(member_casual, weekday)
+```
+
+ride_length마다 시작 지점과 끝나는 지점이 같은 trip 개수 확인
+```{r}
+true_false <-
+all_trips3_2 %>%
+  group_by(ride_length) %>%
+  count(start_station_name == end_station_name)
+```
+
+##```{r}
+##write.csv(ratio_length_data2, file = ##'/Users/jimmybae/Downloads/Bike_Share_Membership/ratio_length_data2.csv')
+##```
+계산
+시작지점과 끝나는 지점이 같은 trip 비율로 계산
+```{r}
+ratio_length_data2 <- ratio_length_data[-c(2000:nrow(ratio_length_data)), ]
+```
+```{r}
+ratio_length_data2 <- na.omit(ratio_length_data2)
+```
+```{r}
+head(ratio_length_data2)
+```
+```{r}
+ratio_length_data2 %>%
+ggplot(aes(x = ride_length, y = ratio_value)) +
+  geom_point(alpha = 0.5)
+```
+계산2(41~600)
+선형회귀와의 만나는 지점
+```{r}
+ratio_length_data3 <- ratio_length_data[-c(0:80,(600:nrow(ratio_length_data))), ]
+```
+```{r}
+ratio_length_data3 <- na.omit(ratio_length_data3)
+```
+```{r}
+ratio_length_data3 %>%
+ggplot(aes(x = ride_length, y = ratio_value)) +
+  geom_point(alpha = 0.5) +
+  ylim(0,1) +
+  stat_smooth(method = lm)
+```
+
+
+```{r}
+all_trips3_2 %>%
+  group_by(ride_length) %>%
+summarise(number_of_rides = n(),
+          trip_length = ride_length) %>%
+ggplot(aes(x = trip_length, y = number_of_rides )) +
+geom_point(alpha = 0.1)
+```
+
+회원별, 요일별 trip횟수 그래프
+```{r}
+all_trips3_2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  scale_fill_brewer(name = '회원', palette = 'Paired') +
+  theme_gray(base_family = 'AppleGothic') +
+  xlab('요일') +
+  ylab('trip 횟수') +
+  scale_y_continuous(labels = scales::comma)
+```
+회원,요일별 평균 이용시간 그래프
+```{r}
+all_trips3_2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  scale_fill_brewer(name = '회원', palette = 'Paired') +
+  theme_gray(base_family = 'AppleGothic') +
+  xlab('요일') +
+  ylab('trip 평균길이') +
+  scale_y_continuous(labels = scales::comma)
+```
+long_trips로 하루 이상 이용시간 분류
+```{r}
+long_trips <- all_trips3[(all_trips3$ride_length >= 86400),]
+```
+
+하루이상 이용시간 분류에서의 이용시간
+```{r}
+long_trips %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()
+            ,average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday)  %>% 
+  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  scale_fill_brewer(name = '회원', palette = 'Paired') +
+  theme_gray(base_family = 'AppleGothic') +
+  xlab('요일') +
+  ylab('하루 이상 평균길이') +
+  scale_y_continuous(labels = scales::comma)
+```
+
+단순 회원 비회원 이용횟수
+```{r}
+all_trips3_2 %>% 
+  group_by(member_casual) %>% 
+  summarise(number_of_rides = n()) %>% 
+  mutate(pct = number_of_rides*100/sum(number_of_rides))
+  ggplot(data = all_trips3_2,mapping= aes(x= member_casual)) +
+  geom_bar() +
+  labs(title="회원 vs 비회원") +
+  theme_gray(base_family = 'AppleGothic') +
+  xlab('회원') +
+  ylab('trip 횟수') +
+  scale_y_continuous(labels = scales::comma)
+```
